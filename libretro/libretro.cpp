@@ -120,7 +120,7 @@ static bool variable_refresh;
 std::string retro_save_directory;
 std::string retro_system_directory;
 std::string retro_content_directory;
-std::string retro_library_name = "DOSBox-SVN";
+std::string retro_library_name = "DOSBox-SVN Glide";
 
 /* libretro variables */
 retro_video_refresh_t video_cb;
@@ -630,6 +630,8 @@ struct retro_variable vars_advanced[] = {
                                             "CPU fine cycles multiplier; 1000|1|10|100" },
     { "dosbox_svn_cpu_cycles_fine",         "CPU fine cycles; 1|2|3|4|5|6|7|9" },
     { "dosbox_svn_scaler",                  "Video scaler; none|normal2x|normal3x|advmame2x|advmame3x|advinterp2x|advinterp3x|hq2x|hq3x|2xsai|super2xsai|supereagle|tv2x|tv3x|rgb2x|rgb3x|scan2x|scan3x" },
+    { "dosbox_svn_voodoo_emulation",        "Voodoo emulation; auto|software|false" },
+    { "dosbox_svn_voodoo_memory",           "Voodoo memory; standard|max" },
     { "dosbox_svn_use_native_refresh",      "Refresh rate switching; false|true"},
     { "dosbox_svn_joystick_timed",          "Joystick timed intervals; true|false" },
     { "dosbox_svn_emulated_mouse",          "Gamepad emulated mouse; enable|disable" },
@@ -959,6 +961,16 @@ void check_variables()
             else
                 variable_refresh = false;
         }
+
+        var.key = "dosbox_svn_voodoo_emulation";
+        var.value = NULL;
+        if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+            update_dosbox_variable("pci", "voodoo", var.value);
+
+        var.key = "dosbox_svn_voodoo_memory";
+        var.value = NULL;
+        if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+            update_dosbox_variable("pci", "voodoomem", var.value);
     }
 }
 
@@ -1416,3 +1428,11 @@ void retro_cheat_reset(void) { }
 void retro_cheat_set(unsigned unused, bool unused1, const char* unused2) { }
 void retro_unload_game (void) { }
 unsigned retro_get_region (void) { return RETRO_REGION_NTSC; }
+
+bool GFX_LazyFullscreenRequested(){};
+bool GFX_TearDown(){};
+bool GFX_IsFullscreen(){};
+bool GFX_UpdateSDLCaptureState(){};
+bool GFX_RestoreMode(){};
+bool GFX_SwitchLazyFullscreen(bool){};
+bool GFX_SwitchFullscreenNoReset(){};
