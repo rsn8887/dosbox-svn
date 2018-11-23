@@ -687,10 +687,12 @@ void voodoo_swap_buffers(voodoo_state *v)
 {
 //	if (LOG_VBLANK_SWAP) LOG(LOG_VOODOO,LOG_WARN)("--- swap_buffers @ %d\n", video_screen_get_vpos(v->screen));
 
+#ifdef C_OPENGL
 	if (v->ogl && v->active) {
 		voodoo_ogl_swap_buffer();
 		return;
 	}
+#endif
 
 	/* keep a history of swap intervals */
 	v->reg[fbiSwapHistory].u = (v->reg[fbiSwapHistory].u << 4);
@@ -1577,12 +1579,16 @@ void register_w(UINT32 offset, UINT32 data) {
 			if (v->type < VOODOO_2)
 				data &= 0x001fffff;
 			if (chips & 1) {
+#ifdef C_OPENGL
 				if (v->ogl && v->active && (FBZMODE_Y_ORIGIN(v->reg[fbzMode].u)!=FBZMODE_Y_ORIGIN(data))) {
 					v->reg[fbzMode].u = data;
 					CPU_Core_Dyn_X86_SaveDHFPUState();
 					voodoo_ogl_set_window(v);
 					CPU_Core_Dyn_X86_RestoreDHFPUState();
-				} else {
+				}
+				else
+#endif
+				{
 					v->reg[fbzMode].u = data;
 				}
 			}
@@ -1909,11 +1915,13 @@ void register_w(UINT32 offset, UINT32 data) {
 		case clipLowYHighY:
 		case clipLeftRight:
 			if (chips & 1) v->reg[0x000 + regnum].u = data;
+#ifdef C_OPENGL
 			if (v->ogl) {
 				CPU_Core_Dyn_X86_SaveDHFPUState();
 				voodoo_ogl_clip_window(v);
 				CPU_Core_Dyn_X86_RestoreDHFPUState();
 			}
+#endif
 			break;
 
 		/* these registers are referenced in the renderer; we must wait for pending work before changing */
@@ -2205,6 +2213,7 @@ void lfb_w(UINT32 offset, UINT32 data, UINT32 mem_mask) {
 				bool has_rgb = (mask & LFB_RGB_PRESENT) > 0;
 				bool has_alpha = ((mask & LFB_ALPHA_PRESENT) > 0) && (FBZMODE_ENABLE_ALPHA_PLANES(v->reg[fbzMode].u) > 0);
 				bool has_depth = ((mask & (LFB_DEPTH_PRESENT | LFB_DEPTH_PRESENT_MSW)) && !FBZMODE_ENABLE_ALPHA_PLANES(v->reg[fbzMode].u));
+#ifdef C_OPENGL
 				if (v->ogl && v->active) {
 					if (has_rgb || has_alpha) {
 						// if enabling dithering: output is 565 not 888 anymore
@@ -2214,7 +2223,10 @@ void lfb_w(UINT32 offset, UINT32 data, UINT32 mem_mask) {
 					if (has_depth) {
 						voodoo_ogl_draw_z(x, scry+1, sw[pix]);
 					}
-				} else {
+				}
+				else
+#endif
+				{
 					/* write to the RGB buffer */
 					if (has_rgb && bufoffs < destmax)
 					{
@@ -2513,7 +2525,7 @@ void lfb_w(UINT32 offset, UINT32 data, UINT32 mem_mask) {
 				}
 				if (FBZCP_CCA_INVERT_OUTPUT(v->reg[fbzColorPath].u))
 					a ^= 0xff;
-
+#ifdef C_OPENGL
 				if (v->ogl && v->active) {
 					if (FBZMODE_RGB_BUFFER_MASK(v->reg[fbzMode].u)) {
 //						APPLY_DITHER(FBZMODE, XX, DITHER_LOOKUP, r, g, b);
@@ -2525,7 +2537,10 @@ void lfb_w(UINT32 offset, UINT32 data, UINT32 mem_mask) {
 //						else
 //							depth[XX] = a;
 					} */
-				} else {
+				}
+				else
+#endif
+				{
 					/* pixel pipeline part 2 handles color combine, fog, alpha, and final output */
 					PIXEL_PIPELINE_MODIFY(v, dither, dither4, x, v->reg[fbzMode].u, v->reg[fbzColorPath].u, v->reg[alphaMode].u, v->reg[fogMode].u, iterz, iterw, v->reg[zaColor]);
 
@@ -2622,11 +2637,12 @@ INT32 texture_w(UINT32 offset, UINT32 data) {
 			dest[BYTE4_XOR_LE(tbaseaddr + 3)] = (data >> 24) & 0xff;
 			changed = true;
 		}
-
+#ifdef C_OPENGL
 		if (changed && v->ogl && v->active) {
 			voodoo_ogl_texture_clear(t->lodoffset[lod],tmunum);
 			voodoo_ogl_texture_clear(t->lodoffset[t->lodmin],tmunum);
 		}
+#endif
 	}
 
 	/* 16-bit texture case */
@@ -2666,11 +2682,12 @@ INT32 texture_w(UINT32 offset, UINT32 data) {
 			dest[BYTE_XOR_LE(tbaseaddr + 1)] = (data >> 16) & 0xffff;
 			changed = true;
 		}
-
+#ifdef C_OPENGL
 		if (changed && v->ogl && v->active) {
 			voodoo_ogl_texture_clear(t->lodoffset[lod],tmunum);
 			voodoo_ogl_texture_clear(t->lodoffset[t->lodmin],tmunum);
 		}
+#endif
 	}
 
 	return 0;
@@ -2844,10 +2861,13 @@ UINT32 lfb_r(UINT32 offset)
 	scry = y;
 	if (LFBMODE_Y_ORIGIN(v->reg[lfbMode].u))
 		scry = (v->fbi.yorigin - y) & 0x3ff;
-
+#ifdef C_OPENGL
 	if (v->ogl && v->active) {
 		data = voodoo_ogl_read_pixel(x, scry+1);
-	} else {
+	}
+	else
+#endif
+	{
 		/* advance pointers to the proper row */
 		bufoffs = scry * v->fbi.rowpixels + x;
 		if (bufoffs >= bufmax)
@@ -3068,8 +3088,10 @@ void voodoo_init(int type) {
 }
 
 void voodoo_shutdown() {
+#ifdef C_OPENGL
 	if (v->ogl)
 		voodoo_ogl_shutdown(v);
+#endif
 
 	if (v!=NULL) {
 		free(v->fbi.ram);
@@ -3155,10 +3177,13 @@ void fastfill(voodoo_state *v)
 		extents[extnum] = extents[0];
 
 	poly_extra_data *extra = new poly_extra_data;
-
+#ifdef C_OPENGL
 	if (v->ogl && v->active) {
 		voodoo_ogl_fastfill();
-	} else {
+	}
+	else
+#endif
+    {
 
 		/* iterate over blocks of extents */
 		for (y = sy; y < ey; y += ARRAY_LENGTH(extents))
@@ -3543,19 +3568,24 @@ void triangle_create_work_item(voodoo_state *v, UINT16 *drawbuf, int texcount)
 	if (v->tmu[1].ram != NULL) extra->r_textureMode1 = v->tmu[1].reg[textureMode].u;
 
 	info->polys++;
-
+#ifdef C_OPENGL
 	if (palette_changed && v->ogl && v->active) {
 		voodoo_ogl_invalidate_paltex();
 		palette_changed = false;
 	}
+#endif
 
+#ifdef C_OPENGL
 	if (v->ogl && v->active) {
 		if (extra->info==NULL)  {
 			delete extra;
 			return;
 		}
 		voodoo_ogl_draw_triangle(extra);
-	} else {
+	}
+	else
+#endif
+	{
 		poly_render_triangle(drawbuf, info->callback, &vert[0], &vert[1], &vert[2], extra);
 	}
 
@@ -3719,27 +3749,34 @@ static void raster_fastfill(void *destbase, INT32 y, const poly_extent *extent, 
 
 
 void voodoo_vblank_flush(void) {
+#ifdef C_OPENGL
 	if (v->ogl)
 		voodoo_ogl_vblank_flush();
+#endif
 	v->fbi.vblank_flush_pending=false;
 }
 
 void voodoo_set_window(void) {
+#ifdef C_OPENGL
 	if (v->ogl && v->active) {
 		voodoo_ogl_set_window(v);
 	}
+#endif
 }
 
 void voodoo_leave(void) {
+#ifdef C_OPENGL
 	if (v->ogl) {
 		voodoo_ogl_leave(true);
 	}
+#endif
 	v->active = false;
 }
 
 void voodoo_activate(void) {
 	v->active = true;
 
+#ifdef C_OPENGL
 	if (v->ogl) {
 		if (voodoo_ogl_init(v)) {
 			voodoo_ogl_clear();
@@ -3748,12 +3785,15 @@ void voodoo_activate(void) {
 			LOG_MSG("VOODOO: acceleration disabled");
 		}
 	}
+#endif
 }
 
 void voodoo_update_dimensions(void) {
 	v->ogl_dimchange = false;
 
+#ifdef C_OPENGL
 	if (v->ogl) {
 		voodoo_ogl_update_dimensions();
 	}
+#endif
 }

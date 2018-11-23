@@ -21,8 +21,9 @@
 #define DOSBOX_VOODOO_VOGL_H
 
 #include <SDL/SDL.h>
+#ifdef C_OPENGL
 #include <SDL/SDL_opengl.h>
-
+#endif
 
 /* opengl extensions */
 extern PFNGLACTIVETEXTUREARBPROC glActiveTextureARB;

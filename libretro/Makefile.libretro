@@ -47,6 +47,7 @@ endif
 ifeq ($(platform),win)
 	WITH_IPX := 1
 	WITH_VOODOO := 1
+	WITH_VOGL := 1
 else ifeq ($(platform),unix)
 	WITH_IPX := 1
 	WITH_VOODOO := 1
@@ -240,7 +241,7 @@ else
 			COMMONFLAGS += -DC_IPX
 		endif
 	endif
-	ifeq ($(WITH_VOODOO), 1)
+	ifeq ($(WITH_VOGL), 1)
 		COMMONFLAGS += -DC_OPENGL
 	endif
 endif
