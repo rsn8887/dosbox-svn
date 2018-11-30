@@ -113,11 +113,14 @@ static void Voodoo_VerticalTimer(Bitu /*val*/) {
 
 	if (v->fbi.vblank_flush_pending) {
 		voodoo_vblank_flush();
+#if C_OPENGL
 		if (GFX_LazyFullscreenRequested()) {
 			v->ogl_dimchange = true;
 		}
+#endif
 	}
 
+#if C_OPENGL
 	if (!v->ogl) {
 		if (!RENDER_StartUpdate()) return; // frameskip
 
@@ -133,7 +136,9 @@ static void Voodoo_VerticalTimer(Bitu /*val*/) {
 			viewbuf += v->fbi.rowpixels;
 		}
 		RENDER_EndUpdate(false);
-	} else {
+	} else
+#endif
+    {
 		// ???
 		voodoo_set_window();
 	}

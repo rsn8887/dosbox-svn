@@ -47,7 +47,7 @@ endif
 ifeq ($(platform),win)
 	WITH_IPX := 1
 	WITH_VOODOO := 1
-	WITH_VOGL := 1
+	WITH_VOGL := 0
 else ifeq ($(platform),unix)
 	WITH_IPX := 1
 	WITH_VOODOO := 1

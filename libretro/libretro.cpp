@@ -1428,11 +1428,3 @@ void retro_cheat_reset(void) { }
 void retro_cheat_set(unsigned unused, bool unused1, const char* unused2) { }
 void retro_unload_game (void) { }
 unsigned retro_get_region (void) { return RETRO_REGION_NTSC; }
-
-bool GFX_LazyFullscreenRequested(){};
-bool GFX_TearDown(){};
-bool GFX_IsFullscreen(){};
-bool GFX_UpdateSDLCaptureState(){};
-bool GFX_RestoreMode(){};
-bool GFX_SwitchLazyFullscreen(bool){};
-bool GFX_SwitchFullscreenNoReset(){};
