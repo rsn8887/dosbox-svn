@@ -36,6 +36,7 @@
 #include <libco.h>
 #include "libretro.h"
 #include "libretro_dosbox.h"
+#include "file/file_path.h"
 
 #include "setup.h"
 #include "dosbox.h"
@@ -230,7 +231,11 @@ bool mount_overlay_filesystem(char drive, const char* path)
     {
         if (log_cb)
             log_cb(RETRO_LOG_INFO, "[dosbox] creating save directory %s\n", path);
+#if (WIN32)
         if (mkdir(path) == -1)
+#else
+        if (mkdir(path, 0700) == -1)
+#endif
         {
             if (log_cb)
                 log_cb(RETRO_LOG_INFO, "[dosbox] error creating save directory %s\n", path);
@@ -260,14 +265,20 @@ bool mount_overlay_filesystem(char drive, const char* path)
         if (o_error)
         {
             if (o_error == 1)
+            {
                 if (log_cb)
                     log_cb(RETRO_LOG_INFO, "[dosbox] can't mix absolute and relative paths");
+            }
             else if (o_error == 2)
+            {
                 if (log_cb)
                     log_cb(RETRO_LOG_INFO, "[dosbox] overlay can't be in the same unrelying file system");
+            }
             else
+            {
                 if (log_cb)
                     log_cb(RETRO_LOG_INFO, "[dosbox] something went wrong");
+            }
             delete overlay;
             return false;
         }
@@ -884,7 +895,7 @@ void check_variables()
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
         update_dosbox_variable("joystick", "timed", var.value);
 
-#if defined(IPX)
+#if defined(C_IPX)
     var.key = "dosbox_svn_ipx";
     var.value = NULL;
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -1245,8 +1256,8 @@ bool retro_load_game(const struct retro_game_info *game)
             loadPath = normalize_path(game->path);
             const size_t lastDot = loadPath.find_last_of('.');
             char tmp[PATH_MAX_LENGTH];
-            snprintf(tmp, sizeof(tmp), game->path);
-            gamePath = basename(tmp);
+            snprintf(tmp, sizeof(tmp), "%s", game->path);
+            gamePath = path_basename(tmp);
 
             /* Find any config file to load */
             if(std::string::npos != lastDot)
