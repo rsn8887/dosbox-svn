@@ -141,7 +141,11 @@ endif
 endif
 
 SOURCES_C := \
-	$(LIBRETRO_COMM_DIR)/libco/libco.c
+	$(LIBRETRO_COMM_DIR)/libco/libco.c \
+	$(LIBRETRO_COMM_DIR)/file/file_path.c \
+	$(LIBRETRO_COMM_DIR)/encodings/encoding_utf.c \
+	$(LIBRETRO_COMM_DIR)/compat/compat_strcasestr.c \
+	$(LIBRETRO_COMM_DIR)/compat/compat_strl.c
 
 # dynarec flags
 ifeq ($(WITH_DYNAREC), arm)
