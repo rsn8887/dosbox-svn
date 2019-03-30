@@ -231,11 +231,8 @@ bool mount_overlay_filesystem(char drive, const char* path)
     {
         if (log_cb)
             log_cb(RETRO_LOG_INFO, "[dosbox] creating save directory %s\n", path);
-#if (WIN32)
-        if (mkdir(path) == -1)
-#else
-        if (mkdir(path, 0700) == -1)
-#endif
+
+        if (!path_mkdir(path))
         {
             if (log_cb)
                 log_cb(RETRO_LOG_INFO, "[dosbox] error creating save directory %s\n", path);
