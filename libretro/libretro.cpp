@@ -1109,8 +1109,10 @@ void retro_set_environment(retro_environment_t cb)
     environ_cb = cb;
 
     bool allow_no_game = true;
+    bool allow_passthrough = true;
 
     cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &allow_no_game);
+    cb(RETRO_ENVIRONMENT_SET_NETPLAY_PASSTHROUGH , &allow_passthrough);
     cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars);
     cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, &disk_interface);
 
@@ -1405,6 +1407,36 @@ void retro_reset (void)
 {
     restart_program(control->startup_params);
 }
+
+
+bool retro_netplay_host_start(const char *hostname, unsigned port)
+{
+    if (log_cb)
+        log_cb(RETRO_LOG_WARN, "[dosbox] starting server on %s %d\n", hostname, port);
+    return true;
+}
+
+bool retro_netplay_host_connect(const char *hostname, unsigned port)
+{
+    if (log_cb)
+        log_cb(RETRO_LOG_WARN, "[dosbox] connecting to %s %d\n", hostname, port);
+    return true;
+}
+
+bool retro_netplay_host_stop(void)
+{
+    if (log_cb)
+        log_cb(RETRO_LOG_WARN, "[dosbox] stopping server\n");
+    return true;
+}
+
+bool retro_netplay_host_discconnect(void)
+{
+    if (log_cb)
+        log_cb(RETRO_LOG_WARN, "[dosbox] disconnected\n");
+    return true;
+}
+
 
 /* Stubs */
 void *retro_get_memory_data(unsigned type) { return 0; }
