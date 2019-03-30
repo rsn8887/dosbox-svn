@@ -33,6 +33,10 @@
 #include <time.h>
 #include <errno.h>
 
+#ifdef __LIBRETRO__
+#include "file/file_path.h"
+#endif
+
 bool logoverlay = false;
 using namespace std;
 
@@ -95,14 +99,19 @@ bool Overlay_Drive::MakeDir(char * dir) {
 	strcpy(newdir,basedir);
 	strcat(newdir,dir);
 	CROSS_FILENAME(newdir);
+#ifndef __LIBRETRO__
 #if defined (WIN32)						/* MS Visual C++ */
 	int temp=mkdir(dirCache.GetExpandName(newdir));
 #else
 	int temp=mkdir(dirCache.GetExpandName(newdir),0700);
 #endif
 	if (temp==0) dirCache.CacheOut(newdir,true);
-
 	return (temp==0);// || ((temp!=0) && (errno==EEXIST));
+#else
+	bool temp=path_mkdir(dirCache.GetExpandName(newdir));
+	if (temp) dirCache.CacheOut(newdir,true);
+	return (temp);
+#endif
 }
 
 bool Overlay_Drive::TestDir(char * dir) {
@@ -453,6 +462,7 @@ bool Overlay_Drive::Sync_leading_dirs(const char* dos_filename){
 			} else {
 				//folder does not exist, make it
 				if (logoverlay) LOG_MSG("creating %s",dirnameoverlay);
+#ifndef __LIBRETRO__
 #if defined (WIN32)						/* MS Visual C++ */
 				int temp = mkdir(dirnameoverlay);
 #else
@@ -461,6 +471,12 @@ bool Overlay_Drive::Sync_leading_dirs(const char* dos_filename){
 				if (temp != 0) return false;
 			}
 		}
+#else
+				bool temp = path_mkdir(dirnameoverlay);
+				if (!temp) return false;
+			}
+		}
+#endif
 		leaddir = leaddir + 1; //Move to next
 	} 
 

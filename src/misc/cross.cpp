@@ -100,6 +100,7 @@ void Cross::GetPlatformConfigName(std::string& in) {
 	in = DEFAULT_CONFIG_FILE;
 }
 
+#ifndef __LIBRETRO__
 void Cross::CreatePlatformConfigDir(std::string& in) {
 #ifdef WIN32
 	W32_ConfDir(in,true);
@@ -116,6 +117,7 @@ void Cross::CreatePlatformConfigDir(std::string& in) {
 #endif
 	in += CROSS_FILESPLIT;
 }
+#endif
 
 void Cross::ResolveHomedir(std::string & temp_line) {
 	if(!temp_line.size() || temp_line[0] != '~') return; //No ~
