@@ -20,11 +20,6 @@
 #include "../../../switch/mman.h"
 #endif
 
-#ifdef VITA
-#include <psp2/kernel/sysmem.h>
-static int sceBlock;
-#endif
-
 class CodePageHandlerDynRec;	// forward
 
 // basic cache block representation
@@ -624,14 +619,6 @@ static void cache_init(bool enable) {
 				cache_code_start_ptr=(Bit8u*)malloc(CACHE_TOTAL+CACHE_MAXSIZE+PAGESIZE_TEMP-1+PAGESIZE_TEMP);
 #elif defined (HAVE_LIBNX)
 			cache_code_start_ptr=(Bit8u*)mmap(NULL, CACHE_TOTAL+CACHE_MAXSIZE+PAGESIZE_TEMP-1+PAGESIZE_TEMP, 0, 0, 0, 0);
-#elif defined (VITA)
-			sceBlock = sceKernelAllocMemBlockForVM("code", CACHE_TOTAL+CACHE_MAXSIZE+PAGESIZE_TEMP-1+PAGESIZE_TEMP);
-  			if (sceBlock >= 0) {
-    				int ret = sceKernelGetMemBlockBase(sceBlock, (void **)&cache_code_start_ptr);
-				if(ret < 0) {
-					cache_code_start_ptr = NULL;
-				}
-			}
 #else
 			cache_code_start_ptr=(Bit8u*)malloc(CACHE_TOTAL+CACHE_MAXSIZE+PAGESIZE_TEMP-1+PAGESIZE_TEMP);
 #endif
