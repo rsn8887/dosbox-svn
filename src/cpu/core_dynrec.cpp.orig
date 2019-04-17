@@ -153,7 +153,6 @@ static struct {
 #define MIPSEL		0x03
 #define ARMV4LE		0x04
 #define ARMV7LE		0x05
-#define POWERPC		0x06
 #define ARMV8LE		0x07
 
 #if C_TARGETCPU == X86_64
@@ -166,13 +165,6 @@ static struct {
 #include "core_dynrec/risc_armv4le.h"
 #elif C_TARGETCPU == ARMV8LE
 #include "core_dynrec/risc_armv8le.h"
-#elif C_TARGETCPU == POWERPC
-#include "core_dynrec/risc_ppc.h"
-#endif
-
-#if !defined(WORDS_BIGENDIAN)
-#define gen_add_LE gen_add
-#define gen_mov_LE_word_to_reg gen_mov_word_to_reg
 #endif
 
 #include "core_dynrec/decoder.h"
@@ -182,14 +174,16 @@ CacheBlockDynRec * LinkBlocks(BlockReturn ret) {
 	// the last instruction was a control flow modifying instruction
 	Bitu temp_ip=SegPhys(cs)+reg_eip;
 	CodePageHandlerDynRec * temp_handler=(CodePageHandlerDynRec *)get_tlb_readhandler(temp_ip);
-	if (temp_handler->flags & (cpu.code.big ? PFLAG_HASCODE32:PFLAG_HASCODE16)) {
+	if (temp_handler->flags & PFLAG_HASCODE) {
 		// see if the target is an already translated block
 		block=temp_handler->FindCacheBlock(temp_ip & 4095);
-		if (block) { // found it, link the current block to
-			cache.block.running->LinkTo(ret==BR_Link2,block);
-		}
+		if (!block) return NULL;
+
+		// found it, link the current block to
+		cache.block.running->LinkTo(ret==BR_Link2,block);
+		return block;
 	}
-	return block;
+	return NULL;
 }
 
 /*
