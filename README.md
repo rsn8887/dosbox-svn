@@ -1,6 +1,5 @@
 
 # DOSBox-SVN libretro
-[![pipeline status](https://git.polygoncorp.com/dev/dosbox-svn/badges/libretro/pipeline.svg)](https://git.polygoncorp.com/dev/dosbox-svn/-/jobs)
 
 Upstream port of DOSBox-SVN to libretro.
 
