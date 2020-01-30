@@ -1465,6 +1465,17 @@ bool retro_load_game(const struct retro_game_info *game)
                 log_cb(RETRO_LOG_INFO, "[dosbox] loading default configuration %s\n", configPath.c_str());
         }
 
+        // Change the current working directory so that it's possible to have paths in .conf and
+        // .bat files (like MOUNT commands) that are relative to the content directory.
+        std::string dir = gamePath.substr(0, gamePath.find_last_of(PATH_SEPARATOR));
+        if (chdir(dir.c_str()) != 0 && log_cb)
+        {
+            log_cb(
+                RETRO_LOG_WARN,
+                "[dosbox] failed to change current directory to \"%s\": %s\n",
+                dir.c_str(), strerror(errno));
+        }
+
         co_switch(emuThread);
         samplesPerFrame = MIXER_RETRO_GetFrequency() / currentFPS;
         return true;
