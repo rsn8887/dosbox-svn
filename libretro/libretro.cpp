@@ -31,6 +31,7 @@
 #include <unistd.h>
 #endif
 
+#include <cerrno>
 #include <cmath>
 
 #include <libco.h>
