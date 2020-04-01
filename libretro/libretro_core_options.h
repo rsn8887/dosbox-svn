@@ -187,7 +187,7 @@ struct retro_core_option_definition option_defs_us[] = {
          { "64", NULL },
          { NULL, NULL },
       },
-      "32"
+      "16"
    },
 #if defined(C_DYNREC) || defined(C_DYNAMIC_X86)
    {
@@ -243,15 +243,16 @@ struct retro_core_option_definition option_defs_us[] = {
    {
       "dosbox_svn_cpu_cycles_mode",
       "System: CPU cycles mode",
-      "Method to determine the amount of CPU cycles that DOSBox tries to emulate per milisecond. Use auto unless you "
-      "have performance problems. A value that is too high for your system may cause slowdown.",
+      "Method to determine the amount of CPU cycles that DOSBox tries to emulate per milisecond. "
+      "\"fixed\" in combination with an appropriate cycle amount is the most compatible setting. "
+      "\"auto\" and \"max\" have issues with automatically adjusting cycles on some systems.",
       {
          { "auto", "auto (real-mode games use fixed cycles 3000, protected-mode games use max)" },
          { "fixed", "fixed (set emulated CPU speed to a amount of cycles" },
          { "max", "max (sets cycles to default value of the host CPU)" }, /*TO-DO: add limit*/
          { NULL, NULL },
       },
-      "auto"
+      "fixed"
    },
    {
       "dosbox_svn_cpu_cycles_multiplier",
@@ -264,7 +265,7 @@ struct retro_core_option_definition option_defs_us[] = {
          { "100000", NULL },
          { NULL, NULL },
       },
-      "1000"
+      "10000"
    },
    {
       "dosbox_svn_cpu_cycles",
@@ -297,7 +298,7 @@ struct retro_core_option_definition option_defs_us[] = {
          { "10000", NULL },
          { NULL, NULL },
       },
-      "100"
+      "1000"
    },
    {
       "dosbox_svn_cpu_cycles_fine",
