@@ -579,7 +579,7 @@ static bool disk_replace_image_index(unsigned index, const struct retro_game_inf
         snprintf(disk_array[index], sizeof(char) * PATH_MAX_LENGTH, "%s", info->path);
     else
         disk_count--;
-    return false;
+    return true;
 }
 
 static struct retro_disk_control_callback disk_interface = {
