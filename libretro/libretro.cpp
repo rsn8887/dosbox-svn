@@ -509,22 +509,22 @@ bool update_dosbox_variable(bool autoexec, std::string section_string, std::stri
 }
 
 /* libretro core implementation */
-static unsigned disk_get_num_images()
+static RETRO_CALLCONV unsigned disk_get_num_images()
 {
     return disk_count;
 }
 
-static bool disk_get_eject_state()
+static RETRO_CALLCONV bool disk_get_eject_state()
 {
     return disk_tray_ejected;
 }
 
-static unsigned disk_get_image_index()
+static RETRO_CALLCONV unsigned disk_get_image_index()
 {
     return disk_index;
 }
 
-static bool disk_set_eject_state(bool ejected)
+static RETRO_CALLCONV bool disk_set_eject_state(bool ejected)
 {
     if (log_cb && ejected)
         log_cb(RETRO_LOG_INFO, "[dosbox] tray open\n");
@@ -553,7 +553,7 @@ static bool disk_set_eject_state(bool ejected)
     return false;
 }
 
-static bool disk_set_image_index(unsigned index)
+static RETRO_CALLCONV bool disk_set_image_index(unsigned index)
 {
     if (index < disk_get_num_images())
     {
@@ -565,7 +565,7 @@ static bool disk_set_image_index(unsigned index)
     return false;
 }
 
-static bool disk_add_image_index()
+static RETRO_CALLCONV bool disk_add_image_index()
 {
     disk_count++;
     if (log_cb)
@@ -573,7 +573,7 @@ static bool disk_add_image_index()
     return true;
 }
 
-static bool disk_replace_image_index(unsigned index, const struct retro_game_info *info)
+static RETRO_CALLCONV bool disk_replace_image_index(unsigned index, const struct retro_game_info *info)
 {
     if (index < disk_get_num_images())
         snprintf(disk_array[index], sizeof(char) * PATH_MAX_LENGTH, "%s", info->path);
