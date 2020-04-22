@@ -131,6 +131,7 @@ retro_audio_sample_batch_t audio_batch_cb;
 retro_input_poll_t poll_cb;
 retro_input_state_t input_cb;
 retro_environment_t environ_cb;
+static void fallback_log(enum retro_log_level level, const char *fmt, ...);
 retro_log_printf_t log_cb;
 extern struct retro_midi_interface *retro_midi_interface;
 
@@ -173,6 +174,17 @@ bool mount_overlay = true;
 
 /* helper functions */
 static char last_written_character = 0;
+
+static void fallback_log(enum retro_log_level level, const char *fmt, ...)
+{
+    va_list va;
+
+    (void)level;
+
+    va_start(va, fmt);
+    vfprintf(stderr, fmt, va);
+    va_end(va);
+}
 
 void write_out_buffer(const char * format,...) {
     char buf[2048];
@@ -220,43 +232,37 @@ bool mount_overlay_filesystem(char drive, const char* path)
     localDrive* ldp = dynamic_cast<localDrive*>(Drives[drive-'A']);
     cdromDrive* cdp = dynamic_cast<cdromDrive*>(Drives[drive-'A']);
 
-    if (log_cb)
-        log_cb(RETRO_LOG_INFO, "[dosbox] mounting %s in %c as overlay\n", path, drive);
+    log_cb(RETRO_LOG_INFO, "[dosbox] mounting %s in %c as overlay\n", path, drive);
 
     struct stat path_stat;
 
     if (stat(path, &path_stat) == 0 && S_ISDIR(path_stat.st_mode))
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[dosbox] save directory already exists %s\n", path);
+        log_cb(RETRO_LOG_INFO, "[dosbox] save directory already exists %s\n", path);
     }
     else
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[dosbox] creating save directory %s\n", path);
+        log_cb(RETRO_LOG_INFO, "[dosbox] creating save directory %s\n", path);
 #if (WIN32)
         if (mkdir(path) == -1)
 #else
         if (mkdir(path, 0700) == -1)
 #endif
         {
-            if (log_cb)
-                log_cb(RETRO_LOG_INFO, "[dosbox] error creating save directory %s\n", path);
+            log_cb(RETRO_LOG_INFO, "[dosbox] error creating save directory %s\n", path);
             return false;
         }
     }
     if (!Drives[drive-'A'])
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[dosbox] base drive %c is not mounted\n", drive);
+        log_cb(RETRO_LOG_INFO, "[dosbox] base drive %c is not mounted\n", drive);
         write_out("No basedrive mounted yet!");
         return false;
     }
 
     if (!ldp || cdp)
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[dosbox] base drive %c is not compatible\n", drive);
+        log_cb(RETRO_LOG_INFO, "[dosbox] base drive %c is not compatible\n", drive);
         return false;
     }
     std::string base = ldp->getBasedir();
@@ -269,18 +275,15 @@ bool mount_overlay_filesystem(char drive, const char* path)
         {
             if (o_error == 1)
             {
-                if (log_cb)
-                    log_cb(RETRO_LOG_INFO, "[dosbox] can't mix absolute and relative paths");
+                log_cb(RETRO_LOG_INFO, "[dosbox] can't mix absolute and relative paths");
             }
             else if (o_error == 2)
             {
-                if (log_cb)
-                    log_cb(RETRO_LOG_INFO, "[dosbox] overlay can't be in the same underlying file system");
+                log_cb(RETRO_LOG_INFO, "[dosbox] overlay can't be in the same underlying file system");
             }
             else
             {
-                if (log_cb)
-                    log_cb(RETRO_LOG_INFO, "[dosbox] something went wrong");
+                log_cb(RETRO_LOG_INFO, "[dosbox] something went wrong");
             }
             delete overlay;
             return false;
@@ -290,8 +293,7 @@ bool mount_overlay_filesystem(char drive, const char* path)
     }
     else
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[dosbox] overlay construction failed");
+        log_cb(RETRO_LOG_INFO, "[dosbox] overlay construction failed");
         return false;
     }
     Drives[drive - 'A'] = overlay;
@@ -308,8 +310,7 @@ bool mount_disk_image(const char *path, bool silent)
 
     if(control->SecureMode())
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[dosbox] this operation is not permitted in secure mode\n");
+        log_cb(RETRO_LOG_INFO, "[dosbox] this operation is not permitted in secure mode\n");
         return false;
     }
 
@@ -326,8 +327,7 @@ bool mount_disk_image(const char *path, bool silent)
 
     if (disk_count == 0)
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[dosbox] no disks added to index\n");
+        log_cb(RETRO_LOG_INFO, "[dosbox] no disks added to index\n");
         return false;
     }
 
@@ -445,8 +445,7 @@ bool unmount_disk_image(char *path)
 
     if (disk_count == 0)
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[dosbox] no disks added to index\n");
+        log_cb(RETRO_LOG_INFO, "[dosbox] no disks added to index\n");
         return false;
     }
 
@@ -526,9 +525,9 @@ static unsigned disk_get_image_index()
 
 static bool disk_set_eject_state(bool ejected)
 {
-    if (log_cb && ejected)
+    if (ejected)
         log_cb(RETRO_LOG_INFO, "[dosbox] tray open\n");
-    else if (!ejected)
+    else
         log_cb(RETRO_LOG_INFO, "[dosbox] tray closed\n");
     disk_tray_ejected = ejected;
 
@@ -558,8 +557,7 @@ static bool disk_set_image_index(unsigned index)
     if (index < disk_get_num_images())
     {
         disk_index = index;
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[dosbox] disk index %u\n", index);
+        log_cb(RETRO_LOG_INFO, "[dosbox] disk index %u\n", index);
         return true;
     }
     return false;
@@ -568,8 +566,7 @@ static bool disk_set_image_index(unsigned index)
 static bool disk_add_image_index()
 {
     disk_count++;
-    if (log_cb)
-        log_cb(RETRO_LOG_INFO, "[dosbox] disk count %u\n", disk_count);
+    log_cb(RETRO_LOG_INFO, "[dosbox] disk count %u\n", disk_count);
     return true;
 }
 
@@ -622,18 +619,18 @@ static void update_gfx_mode(bool change_fps)
         new_av_info.timing.fps = new_fps;
         new_av_info.timing.sample_rate = (double)MIXER_RETRO_GetFrequency();
         cb_error = !environ_cb(RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO, &new_av_info);
-        if (cb_error && log_cb)
+        if (cb_error)
             log_cb(RETRO_LOG_WARN, "[dosbox] SET_SYSTEM_AV_INFO failed\n");
         currentFPS = new_fps;
     }
     else
     {
         cb_error = !environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &new_av_info);
-        if (cb_error && log_cb)
+        if (cb_error)
             log_cb(RETRO_LOG_WARN, "[dosbox] SET_GEOMETRY failed\n");
     }
 
-    if (!cb_error && log_cb)
+    if (!cb_error)
         log_cb (RETRO_LOG_INFO,
                 "[dosbox] resolution changed %dx%d @ %.3fHz AR: %.5f => %dx%d @ %.3fHz AR: %.5f\n",
                 currentWidth, currentHeight, old_fps, current_aspect_ratio,
@@ -1170,8 +1167,7 @@ static void start_dosbox(void)
         else
             retro_midi_interface = NULL;
 
-        if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[dosbox] MIDI interface %s.\n",
+        log_cb(RETRO_LOG_INFO, "[dosbox] MIDI interface %s.\n",
                 retro_midi_interface ? "initialized" : "unavailable\n");
     }
 
@@ -1188,13 +1184,11 @@ static void start_dosbox(void)
     }
     catch(int)
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_WARN, "[dosbox] frontend asked to exit\n");
+        log_cb(RETRO_LOG_WARN, "[dosbox] frontend asked to exit\n");
         return;
     }
 
-    if (log_cb)
-        log_cb(RETRO_LOG_WARN, "[dosbox] core asked to exit\n");
+    log_cb(RETRO_LOG_WARN, "[dosbox] core asked to exit\n");
 
     dosbox_exit = true;
 }
@@ -1209,8 +1203,7 @@ static void wrap_dosbox()
     /* Dead emulator */
     while(true)
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_ERROR, "[dosbox] running a dead DOSBox instance\n");
+        log_cb(RETRO_LOG_ERROR, "[dosbox] running a dead DOSBox instance\n");
         co_switch(mainThread);
     }
 }
@@ -1231,16 +1224,14 @@ void init_threads(void)
     }
     else
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_WARN, "[dosbox] init called more than once \n");
+        log_cb(RETRO_LOG_WARN, "[dosbox] init called more than once \n");
     }
 }
 
 void restart_program(std::vector<std::string> & parameters)
 {
 
-    if (log_cb)
-        log_cb(RETRO_LOG_WARN, "[dosbox] program restart not supported\n");
+    log_cb(RETRO_LOG_WARN, "[dosbox] program restart not supported\n");
     return;
 
     /* TO-DO: this kinda works but it's still not working 100% hence the early return*/
@@ -1368,11 +1359,8 @@ void retro_init (void)
     struct retro_log_callback log;
     if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
         log_cb = log.log;
-    else
-        log_cb = NULL;
 
-    if (log_cb)
-        log_cb(RETRO_LOG_INFO, "[dosbox] logger interface initialized\n");
+    log_cb(RETRO_LOG_INFO, "[dosbox] logger interface initialized\n");
 
     RDOSGFXcolorMode = RETRO_PIXEL_FORMAT_XRGB8888;
     environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &RDOSGFXcolorMode);
@@ -1382,20 +1370,17 @@ void retro_init (void)
     const char *system_dir = NULL;
     if (environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &system_dir) && system_dir)
         retro_system_directory = system_dir;
-    if (log_cb)
-        log_cb(RETRO_LOG_INFO, "[dosbox] SYSTEM_DIRECTORY: %s\n", retro_system_directory.c_str());
+    log_cb(RETRO_LOG_INFO, "[dosbox] SYSTEM_DIRECTORY: %s\n", retro_system_directory.c_str());
 
     const char *save_dir = NULL;
     if (environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &save_dir) && save_dir)
         retro_save_directory = save_dir;
-    if (log_cb)
-        log_cb(RETRO_LOG_INFO, "[dosbox] SAVE_DIRECTORY: %s\n", retro_save_directory.c_str());
+    log_cb(RETRO_LOG_INFO, "[dosbox] SAVE_DIRECTORY: %s\n", retro_save_directory.c_str());
 
     const char *content_dir = NULL;
     if (environ_cb(RETRO_ENVIRONMENT_GET_CONTENT_DIRECTORY, &content_dir) && content_dir)
         retro_content_directory = content_dir;
-    if (log_cb)
-        log_cb(RETRO_LOG_INFO, "[dosbox] CONTENT_DIRECTORY: %s\n", retro_content_directory.c_str());
+    log_cb(RETRO_LOG_INFO, "[dosbox] CONTENT_DIRECTORY: %s\n", retro_content_directory.c_str());
 }
 
 void retro_deinit(void)
@@ -1445,8 +1430,7 @@ bool retro_load_game(const struct retro_game_info *game)
                 else if(extension == "iso" || extension == "cue")
                 {
                     configPath = normalize_path(retro_save_directory + slash +  retro_library_name + ".conf");
-                    if(log_cb)
-                        log_cb(RETRO_LOG_INFO, "[dosbox] loading default configuration %s\n", configPath.c_str());
+                    log_cb(RETRO_LOG_INFO, "[dosbox] loading default configuration %s\n", configPath.c_str());
                     disk_add_image_index();
                     snprintf(disk_load_image, sizeof(disk_load_image), "%s", loadPath.c_str());
                     loadPath.clear();
@@ -1454,22 +1438,20 @@ bool retro_load_game(const struct retro_game_info *game)
                 else if(configPath.empty())
                 {
                     configPath = normalize_path(retro_save_directory + slash +  retro_library_name + ".conf");
-                    if(log_cb)
-                        log_cb(RETRO_LOG_INFO, "[dosbox] loading default configuration %s\n", configPath.c_str());
+                    log_cb(RETRO_LOG_INFO, "[dosbox] loading default configuration %s\n", configPath.c_str());
                 }
             }
         }
         else
         {
             configPath = normalize_path(retro_save_directory + slash +  retro_library_name + ".conf");
-            if(log_cb)
-                log_cb(RETRO_LOG_INFO, "[dosbox] loading default configuration %s\n", configPath.c_str());
+            log_cb(RETRO_LOG_INFO, "[dosbox] loading default configuration %s\n", configPath.c_str());
         }
 
         // Change the current working directory so that it's possible to have paths in .conf and
         // .bat files (like MOUNT commands) that are relative to the content directory.
         std::string dir = gamePath.substr(0, gamePath.find_last_of(PATH_SEPARATOR));
-        if (chdir(dir.c_str()) != 0 && log_cb)
+        if (chdir(dir.c_str()) != 0)
         {
             log_cb(
                 RETRO_LOG_WARN,
@@ -1483,8 +1465,7 @@ bool retro_load_game(const struct retro_game_info *game)
     }
     else
     {
-        if(log_cb)
-            log_cb(RETRO_LOG_WARN, "[dosbox] load game called without emulator thread\n");
+        log_cb(RETRO_LOG_WARN, "[dosbox] load game called without emulator thread\n");
         return false;
     }
 }
@@ -1568,8 +1549,7 @@ void retro_run (void)
     }
     else
     {
-        if (log_cb)
-            log_cb(RETRO_LOG_WARN, "[dosbox] run called without emulator thread\n");
+        log_cb(RETRO_LOG_WARN, "[dosbox] run called without emulator thread\n");
     }
     if (midi_enable && retro_midi_interface && retro_midi_interface->output_enabled())
         retro_midi_interface->flush();
