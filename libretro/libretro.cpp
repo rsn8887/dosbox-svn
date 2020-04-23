@@ -52,6 +52,14 @@
 #include "dos/drives.h"
 #include "programs.h"
 
+#if defined(VITA)
+#  include <psp2/io/fcntl.h>
+#  include <psp2/io/dirent.h>
+#  include <psp2/io/stat.h>
+#elif defined(PSP)
+#  include <pspiofilemgr.h>
+#endif
+
 #ifdef ANDROID
 #include "nonlibc.h"
 #endif
@@ -1448,6 +1456,7 @@ bool retro_load_game(const struct retro_game_info *game)
             log_cb(RETRO_LOG_INFO, "[dosbox] loading default configuration %s\n", configPath.c_str());
         }
 
+#ifndef VITA
         // Change the current working directory so that it's possible to have paths in .conf and
         // .bat files (like MOUNT commands) that are relative to the content directory.
         std::string dir = gamePath.substr(0, gamePath.find_last_of(PATH_SEPARATOR));
@@ -1458,6 +1467,7 @@ bool retro_load_game(const struct retro_game_info *game)
                 "[dosbox] failed to change current directory to \"%s\": %s\n",
                 dir.c_str(), strerror(errno));
         }
+#endif
 
         co_switch(emuThread);
         samplesPerFrame = MIXER_RETRO_GetFrequency() / currentFPS;
@@ -1571,3 +1581,20 @@ void retro_cheat_reset(void) { }
 void retro_cheat_set(unsigned unused, bool unused1, const char* unused2) { }
 void retro_unload_game (void) { }
 unsigned retro_get_region (void) { return RETRO_REGION_NTSC; }
+
+
+#if defined(VITA) || defined(PSP)
+extern "C" int mkdir(const char *dir, mode_t mode) {
+  return sceIoMkdir(dir, mode);
+}
+extern "C" int rmdir(const char *dir) {
+  return sceIoRmdir(dir);
+}
+
+extern "C" char *getcwd(char *buffer, size_t len)
+{
+  strcpy(buffer,"ux0:/data/retroarch/");
+  return 0;
+}
+
+#endif
