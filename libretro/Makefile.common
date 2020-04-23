@@ -13,7 +13,6 @@ endif
 INCFLAGS += \
 	-I$(CORE_DIR)/src \
 	-I$(CORE_DIR)/libretro \
-	-I$(CORE_DIR)/libretro/deps/libco \
 	-I$(LIBRETRO_COMM_DIR)/include \
 	-I$(CORE_DIR)/include \
 	-I$(CORE_DIR)/src/midi/munt
@@ -142,7 +141,7 @@ endif
 endif
 
 SOURCES_C := \
-	$(CORE_DIR)/libretro/deps/libco/libco.c \
+	$(CORE_DIR)/libretro/deps/common/libco/libco.c \
 	$(LIBRETRO_COMM_DIR)/encodings/encoding_utf.c \
 	$(LIBRETRO_COMM_DIR)/compat/compat_strcasestr.c \
 	$(LIBRETRO_COMM_DIR)/compat/compat_strl.c \
