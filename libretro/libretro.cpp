@@ -139,8 +139,8 @@ retro_audio_sample_batch_t audio_batch_cb;
 retro_input_poll_t poll_cb;
 retro_input_state_t input_cb;
 retro_environment_t environ_cb;
-static void fallback_log(enum retro_log_level level, const char *fmt, ...);
-retro_log_printf_t log_cb;
+static void RETRO_CALLCONV fallback_log(enum retro_log_level level, const char *fmt, ...);
+retro_log_printf_t log_cb = fallback_log;
 extern struct retro_midi_interface *retro_midi_interface;
 
 /* DOSBox state */
@@ -183,7 +183,7 @@ bool mount_overlay = true;
 /* helper functions */
 static char last_written_character = 0;
 
-static void fallback_log(enum retro_log_level level, const char *fmt, ...)
+static void RETRO_CALLCONV fallback_log(enum retro_log_level level, const char *fmt, ...)
 {
     va_list va;
 
@@ -1278,6 +1278,10 @@ void retro_set_environment(retro_environment_t cb)
 {
     environ_cb = cb;
 
+    struct retro_log_callback log;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
+        log_cb = log.log;
+
     bool allow_no_game = true;
 
     cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &allow_no_game);
@@ -1363,12 +1367,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 
 void retro_init (void)
 {
-    /* Initialize logger interface */
-    struct retro_log_callback log;
-    if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
-        log_cb = log.log;
-
-    log_cb(RETRO_LOG_INFO, "[dosbox] logger interface initialized\n");
+    log_cb(RETRO_LOG_INFO, "[dosbox] Staring retro_init\n");
 
     RDOSGFXcolorMode = RETRO_PIXEL_FORMAT_XRGB8888;
     environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &RDOSGFXcolorMode);
